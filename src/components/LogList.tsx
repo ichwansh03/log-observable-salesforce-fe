@@ -2,21 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { type ApexLogDto } from '../types';
 
 const LogList: React.FC = () => {
-  const [logs, setLogs] = useState<ApexLogDto[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(0);
   const [size] = useState<number>(10);
+  const [selectedLogBody, setSelectedLogBody] = useState<string | null>(null);
+  const [fetchingBody, setFetchingBody] = useState<boolean>(false);
+  const [searchClass, setSearchClass] = useState<string>('');
+  const [searchUser, setSearchUser] = useState<string>('');
 
-  const fetchLogs = async (currentPage: number) => {
+  const fetchLogs = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/sfdc/logs?page=${currentPage}&size=${size}`);
+      // Using the /db endpoint for searching historical logs
+      let url = `/api/sfdc/logs/db?page=${page}&size=${size}`;
+      if (searchClass) url += `&className=${encodeURIComponent(searchClass)}`;
+      if (searchUser) url += `&author=${encodeURIComponent(searchUser)}`;
+      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch logs');
       }
       const data = await response.json();
-      setLogs(data as ApexLogDto[]);
+      setLogs(data as any[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -25,8 +34,42 @@ const LogList: React.FC = () => {
   };
 
   useEffect(() => {
-    void fetchLogs(page);
-  }, [page, size]);
+    const timer = setTimeout(() => {
+      void fetchLogs();
+    }, 300); // Debounce search
+    return () => clearTimeout(timer);
+  }, [page, size, searchClass, searchUser]);
+
+  const handleViewDetail = async (id: string) => {
+    setFetchingBody(true);
+    try {
+      const response = await fetch(`/api/sfdc/logs/${id}/body`);
+      const body = await response.text();
+      setSelectedLogBody(body);
+    } catch (err) {
+      alert('Failed to fetch log body');
+    } finally {
+      setFetchingBody(false);
+    }
+  };
+
+  const handleDownload = async (id: string, operation: string | undefined) => {
+    try {
+      const response = await fetch(`/api/sfdc/logs/${id}/body`);
+      const body = await response.text();
+      const blob = new Blob([body], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${operation || 'log'}_${id}.log`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      alert('Failed to download log');
+    }
+  };
 
   const handleNextPage = () => setPage((prev) => prev + 1);
   const handlePrevPage = () => setPage((prev) => Math.max(0, prev - 1));
@@ -36,38 +79,76 @@ const LogList: React.FC = () => {
 
   return (
     <div className="log-list-container">
-      <h2>Apex Logs</h2>
+      <h2>Apex Logs (Database)</h2>
+      
+      <div className="search-bar">
+        <input 
+          type="text" 
+          placeholder="Search by Class/Trigger..." 
+          value={searchClass}
+          onChange={(e) => setSearchClass(e.target.value)}
+          className="search-input"
+        />
+        <input 
+          type="text" 
+          placeholder="Search by User..." 
+          value={searchUser}
+          onChange={(e) => setSearchUser(e.target.value)}
+          className="search-input"
+        />
+      </div>
+
       <div className="table-wrapper">
         <table className="log-table">
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Class/Trigger</th>
-              <th>Operation</th>
-              <th>User</th>
-              <th>Status</th>
-              <th>Size</th>
+              <th className="col-time">Time</th>
+              <th className="col-class">Class/Trigger</th>
+              <th className="col-op">Operation</th>
+              <th className="col-user">User</th>
+              <th className="col-status">Status</th>
+              <th className="col-size">Size</th>
+              <th className="col-actions">Actions</th>
             </tr>
           </thead>
           <tbody>
             {logs.map((log) => (
-              <tr key={log.Id}>
-                <td>{log.StartTime ? new Date(log.StartTime).toLocaleString() : 'N/A'}</td>
+              <tr key={log.sfdcId}>
+                <td>{log.requestTime ? new Date(log.requestTime).toLocaleString() : 'N/A'}</td>
                 <td>{log.apexClassName || 'N/A'}</td>
-                <td>{log.Operation}</td>
-                <td>{log.LogUser?.Name || 'N/A'}</td>
-                <td>{log.Status}</td>
-                <td>{log.LogLength ? `${(log.LogLength / 1024).toFixed(2)} KB` : '0 KB'}</td>
+                <td>{log.operation}</td>
+                <td>{log.authorName || 'N/A'}</td>
+                <td>{log.status}</td>
+                <td>{log.logSize ? `${(log.logSize / 1024).toFixed(2)} KB` : '0 KB'}</td>
+                <td className="actions-cell">
+                  <button className="action-btn view-btn" onClick={() => handleViewDetail(log.sfdcId)}>View</button>
+                  <button className="action-btn download-btn" onClick={() => handleDownload(log.sfdcId, log.operation)}>Download</button>
+                </td>
               </tr>
             ))}
             {logs.length === 0 && (
               <tr>
-                <td colSpan={6}>No logs found</td>
+                <td colSpan={7}>No logs found</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      
+      {selectedLogBody !== null && (
+        <div className="modal-overlay" onClick={() => setSelectedLogBody(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Log Detail</h3>
+              <button className="close-btn" onClick={() => setSelectedLogBody(null)}>×</button>
+            </div>
+            <pre className="log-body-pre">{selectedLogBody || 'No content'}</pre>
+          </div>
+        </div>
+      )}
+
+      {fetchingBody && <div className="overlay-loading">Fetching log body...</div>}
+
       <div className="pagination">
         <button className="pagination-btn" onClick={handlePrevPage} disabled={page === 0 || loading}>
           Previous

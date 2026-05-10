@@ -405,15 +405,22 @@
   min-height: 100vh;
 }
 
-.app-header {
-  padding: 20px;
-  border-bottom: 1px solid var(--border);
-  background-color: var(--bg);
+.main-content {
+  flex-grow: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
-.app-header h1 {
-  margin: 0;
-  font-size: 2rem;
+.page-container {
+  padding: 2rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .app-footer {

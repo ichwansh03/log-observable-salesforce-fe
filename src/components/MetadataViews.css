@@ -1,0 +1,35 @@
+.metadata-view-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.metadata-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.metadata-header h2 {
+  margin: 0;
+}
+
+.status-badge {
+  background-color: var(--accent-bg);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.entity-name {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.api-name {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--text);
+}

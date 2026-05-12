@@ -29,6 +29,24 @@ const Navbar: React.FC = () => {
         >
           Setup Trace
         </NavLink>
+        <NavLink 
+          to="/active-users" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+        >
+          Users
+        </NavLink>
+        <NavLink 
+          to="/active-classes" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+        >
+          Apex Classes
+        </NavLink>
+        <NavLink 
+          to="/active-triggers" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+        >
+          Triggers
+        </NavLink>
       </div>
     </nav>
   );

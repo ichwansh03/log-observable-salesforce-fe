@@ -63,8 +63,8 @@ const TraceFlagSetup: React.FC = () => {
     }
 
     try {
-      // Mock API call to create trace flag
-      const response = await fetch('/api/sfdc/trace-flags', {
+      // API call to create trace flag
+      const response = await fetch('/api/sfdc/logs/trace-flags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

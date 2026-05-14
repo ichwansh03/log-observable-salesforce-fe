@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './MetadataViews.css';
+import AddTraceModal from './AddTraceModal';
 
 interface User {
   id: string;
@@ -12,6 +13,8 @@ interface User {
 const ActiveUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -28,12 +31,27 @@ const ActiveUsers: React.FC = () => {
     fetchUsers();
   }, []);
 
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    user.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) return <div className="loading">Loading active users...</div>;
 
   return (
     <div className="page-container metadata-view-container">
       <div className="metadata-header">
         <h2>Active Users</h2>
+      </div>
+
+      <div className="search-container">
+        <input 
+          type="text" 
+          placeholder="Search users..." 
+          className="metadata-search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="table-wrapper">
@@ -45,21 +63,44 @@ const ActiveUsers: React.FC = () => {
               <th>Email</th>
               <th>Role</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <tr key={user.id}>
                 <td className="entity-name">{user.name}</td>
                 <td className="api-name">{user.username}</td>
                 <td>{user.email}</td>
                 <td>{user.role}</td>
                 <td><span className="status-badge">Active</span></td>
+                <td>
+                  <button 
+                    className="action-btn" 
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    Trace
+                  </button>
+                </td>
               </tr>
             ))}
+            {filteredUsers.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>No users found</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      {selectedUser && (
+        <AddTraceModal 
+          entityId={selectedUser.id}
+          entityName={selectedUser.name}
+          entityType="User"
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
     </div>
   );
 };

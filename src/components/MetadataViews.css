@@ -10,6 +10,29 @@
   margin-bottom: 2rem;
 }
 
+.search-container {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.metadata-search-input {
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  width: 300px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.metadata-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
 .metadata-header h2 {
   margin: 0;
 }

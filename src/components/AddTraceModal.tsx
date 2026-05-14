@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import AutocompleteInput from './AutocompleteInput';
-import './TraceFlagSetup.css';
+import React, { useState } from 'react';
+import './AddTraceModal.css';
 
-const TraceFlagSetup: React.FC = () => {
-  const [metadata, setMetadata] = useState<{ id: string; name: string; type: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<{ id: string; name: string; type?: string } | null>(null);
+interface AddTraceModalProps {
+  entityId: string;
+  entityName: string;
+  entityType: string;
+  onClose: () => void;
+}
+
+const AddTraceModal: React.FC<AddTraceModalProps> = ({ entityId, entityName, entityType, onClose }) => {
   const [debugLevel, setDebugLevel] = useState('SFDC_DevConsole');
   const [durationMode, setDurationMode] = useState<'24h' | 'custom'>('24h');
   const [customDays, setCustomDays] = useState('0');
@@ -14,40 +17,8 @@ const TraceFlagSetup: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  useEffect(() => {
-    // ... rest of metadata fetching
-
-    // In a real app, you would fetch this from /api/sfdc/metadata
-    const fetchMetadata = async () => {
-      try {
-        // Simulated delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const mockData = [
-          { id: '005xxx1', name: 'Ichwan Sholihin', type: 'User' },
-          { id: '005xxx2', name: 'Admin User', type: 'User' },
-          { id: '01pxxx1', name: 'AccountTrigger', type: 'ApexTrigger' },
-          { id: '01pxxx2', name: 'ContactTrigger', type: 'ApexTrigger' },
-          { id: '01pxxx3', name: 'AccountService', type: 'ApexClass' },
-          { id: '01pxxx4', name: 'LogService', type: 'ApexClass' },
-        ];
-        setMetadata(mockData);
-      } catch (err) {
-        console.error('Failed to fetch metadata', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMetadata();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedItem) {
-      setMessage({ text: 'Please select a User, Class, or Trigger', type: 'error' });
-      return;
-    }
-
     setSubmitting(true);
     setMessage(null);
 
@@ -63,20 +34,19 @@ const TraceFlagSetup: React.FC = () => {
     }
 
     try {
-      // API call to create trace flag
       const response = await fetch('/api/sfdc/logs/trace-flags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tracedEntityId: selectedItem.id,
+          tracedEntityId: entityId,
           debugLevelName: debugLevel,
           durationMinutes: totalMinutes,
         }),
       });
 
       if (response.ok) {
-        setMessage({ text: `Successfully created trace flag for ${selectedItem.name}`, type: 'success' });
-        setSelectedItem(null);
+        setMessage({ text: `Successfully created trace flag for ${entityName}`, type: 'success' });
+        setTimeout(() => onClose(), 1500);
       } else {
         throw new Error('Failed to create trace flag');
       }
@@ -87,22 +57,17 @@ const TraceFlagSetup: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="loading">Loading metadata...</div>;
-
   return (
-    <div className="page-container setup-trace-container">
-      <div className="setup-card">
-        <h2>Setup New Trace Flag</h2>
-        <p className="subtitle">Configure automated logging for specific Salesforce entities.</p>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content add-trace-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Setup Trace: {entityName}</h3>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
         
-        <form onSubmit={handleSubmit} className="setup-form">
-          <AutocompleteInput 
-            label="Search Entity (User, Class, or Trigger)"
-            placeholder="Start typing name..."
-            items={metadata}
-            onSelect={setSelectedItem}
-          />
-
+        <form onSubmit={handleSubmit} className="setup-form modal-form">
+          <p className="entity-info">Target: <strong>{entityType}</strong></p>
+          
           <div className="form-row">
             <div className="form-group">
               <label>Debug Level</label>
@@ -181,17 +146,20 @@ const TraceFlagSetup: React.FC = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
-            className="submit-btn" 
-            disabled={submitting || !selectedItem}
-          >
-            {submitting ? 'Creating...' : 'Create Trace Flag'}
-          </button>
+          <div className="modal-actions">
+            <button type="button" className="action-btn cancel-btn" onClick={onClose}>Cancel</button>
+            <button 
+              type="submit" 
+              className="submit-btn" 
+              disabled={submitting}
+            >
+              {submitting ? 'Creating...' : 'Create Trace Flag'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
   );
 };
 
-export default TraceFlagSetup;
+export default AddTraceModal;

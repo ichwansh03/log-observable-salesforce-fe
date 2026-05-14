@@ -3,11 +3,10 @@ import './TraceFlagManager.css';
 
 interface TraceFlag {
   id: string;
-  tracedEntityName: string;
-  tracedEntityType: string;
+  tracedEntity: { name: string; attributes: { type: string } } | null;
   startDate: string;
   expirationDate: string;
-  debugLevelName: string;
+  debugLevel: { developerName: string } | null;
 }
 
 const TraceFlagManager: React.FC = () => {
@@ -18,28 +17,10 @@ const TraceFlagManager: React.FC = () => {
   const fetchTraces = async () => {
     setLoading(true);
     try {
-      // Mock API call
-      // In a real app, you would fetch this from /api/sfdc/trace-flags
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const mockTraces: TraceFlag[] = [
-        {
-          id: '1',
-          tracedEntityName: 'Ichwan Sholihin',
-          tracedEntityType: 'User',
-          startDate: new Date().toISOString(),
-          expirationDate: new Date(Date.now() + 30 * 60000).toISOString(),
-          debugLevelName: 'SFDC_DevConsole'
-        },
-        {
-          id: '2',
-          tracedEntityName: 'AccountTrigger',
-          tracedEntityType: 'ApexTrigger',
-          startDate: new Date().toISOString(),
-          expirationDate: new Date(Date.now() + 60 * 60000).toISOString(),
-          debugLevelName: 'SFDC_LogLevel'
-        }
-      ];
-      setTraces(mockTraces);
+      const response = await fetch('/api/sfdc/logs/trace-flags');
+      if (!response.ok) throw new Error('Failed to fetch trace flags');
+      const data = await response.json();
+      setTraces(data);
     } catch (err) {
       setError('Failed to fetch active trace flags');
     } finally {
@@ -55,9 +36,12 @@ const TraceFlagManager: React.FC = () => {
     if (!window.confirm('Are you sure you want to remove this trace flag?')) return;
     
     try {
-      // Mock API call
-      await fetch(`/api/sfdc/trace-flags/${id}`, { method: 'DELETE' });
-      setTraces(prev => prev.filter(t => t.id !== id));
+      const response = await fetch(`/api/sfdc/logs/trace-flags/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setTraces(prev => prev.filter(t => t.id !== id));
+      } else {
+        throw new Error('Failed to delete');
+      }
     } catch (err) {
       alert('Failed to delete trace flag');
     }
@@ -88,9 +72,9 @@ const TraceFlagManager: React.FC = () => {
           <tbody>
             {traces.map((trace) => (
               <tr key={trace.id}>
-                <td className="font-bold">{trace.tracedEntityName}</td>
-                <td><span className="type-badge">{trace.tracedEntityType}</span></td>
-                <td>{trace.debugLevelName}</td>
+                <td className="font-bold">{trace.tracedEntity?.name || 'Unknown'}</td>
+                <td><span className="type-badge">{trace.tracedEntity?.attributes?.type || 'Unknown'}</span></td>
+                <td>{trace.debugLevel?.developerName || 'Unknown'}</td>
                 <td>{new Date(trace.startDate).toLocaleTimeString()}</td>
                 <td>{new Date(trace.expirationDate).toLocaleTimeString()}</td>
                 <td>

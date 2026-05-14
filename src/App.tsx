@@ -22,7 +22,7 @@ function App() {
       </main>
       <footer className="app-footer">
         <div className="ticks"></div>
-        <p>© 2026 Observability Engineering Team</p>
+        <p>© 2026 Ichwan Sholihin</p>
       </footer>
     </div>
   )

@@ -3,11 +3,11 @@ import './MetadataViews.css';
 import AddTraceModal from './AddTraceModal';
 
 interface User {
-  id: string;
+  sfdcId: string;
   name: string;
   username: string;
   email: string;
-  role: string;
+  profileName: string;
 }
 
 const ActiveUsers: React.FC = () => {
@@ -16,27 +16,31 @@ const ActiveUsers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      const mockUsers: User[] = [
-        { id: '005xxx1', name: 'Ichwan Sholihin', username: 'ichwan@sfdc.demo', email: 'ichwan@example.com', role: 'System Administrator' },
-        { id: '005xxx2', name: 'Admin User', username: 'admin@sfdc.demo', email: 'admin@example.com', role: 'System Administrator' },
-        { id: '005xxx3', name: 'Standard User', username: 'user@sfdc.demo', email: 'user@example.com', role: 'Standard User' },
-      ];
-      setUsers(mockUsers);
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const url = searchTerm 
+        ? `/api/sfdc/users/db?name=${encodeURIComponent(searchTerm)}` 
+        : '/api/sfdc/users/db';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const data = await response.json();
+      setUsers(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setLoading(false);
-    };
-    fetchUsers();
-  }, []);
+    }
+  };
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  if (loading) return <div className="loading">Loading active users...</div>;
+  if (loading && users.length === 0) return <div className="loading">Loading active users...</div>;
 
   return (
     <div className="page-container metadata-view-container">
@@ -47,7 +51,7 @@ const ActiveUsers: React.FC = () => {
       <div className="search-container">
         <input 
           type="text" 
-          placeholder="Search users..." 
+          placeholder="Search users by name..." 
           className="metadata-search-input"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -67,12 +71,12 @@ const ActiveUsers: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id}>
+            {users.map((user) => (
+              <tr key={user.sfdcId}>
                 <td className="entity-name">{user.name}</td>
                 <td className="api-name">{user.username}</td>
                 <td>{user.email}</td>
-                <td>{user.role}</td>
+                <td>{user.profileName}</td>
                 <td><span className="status-badge">Active</span></td>
                 <td>
                   <button 
@@ -84,7 +88,7 @@ const ActiveUsers: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {filteredUsers.length === 0 && (
+            {users.length === 0 && (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>No users found</td>
               </tr>
@@ -95,7 +99,7 @@ const ActiveUsers: React.FC = () => {
 
       {selectedUser && (
         <AddTraceModal 
-          entityId={selectedUser.id}
+          entityId={selectedUser.sfdcId}
           entityName={selectedUser.name}
           entityType="User"
           onClose={() => setSelectedUser(null)}

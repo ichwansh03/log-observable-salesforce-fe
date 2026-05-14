@@ -3,7 +3,7 @@ import './MetadataViews.css';
 import AddTraceModal from './AddTraceModal';
 
 interface ApexClass {
-  id: string;
+  sfdcId: string;
   name: string;
   apiVersion: string;
   status: string;
@@ -16,27 +16,31 @@ const ActiveClasses: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<ApexClass | null>(null);
 
-  useEffect(() => {
-    const fetchClasses = async () => {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      const mockClasses: ApexClass[] = [
-        { id: '01pxxx1', name: 'AccountService', apiVersion: '60.0', status: 'Active', lastModifiedDate: new Date().toISOString() },
-        { id: '01pxxx2', name: 'LogService', apiVersion: '60.0', status: 'Active', lastModifiedDate: new Date().toISOString() },
-        { id: '01pxxx3', name: 'TraceFlagController', apiVersion: '60.0', status: 'Active', lastModifiedDate: new Date().toISOString() },
-        { id: '01pxxx4', name: 'MetadataUtils', apiVersion: '59.0', status: 'Active', lastModifiedDate: new Date().toISOString() },
-      ];
-      setClasses(mockClasses);
+  const fetchClasses = async () => {
+    setLoading(true);
+    try {
+      const url = searchTerm 
+        ? `/api/sfdc/metadata/classes/db?name=${encodeURIComponent(searchTerm)}` 
+        : '/api/sfdc/metadata/classes/db';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch classes');
+      const data = await response.json();
+      setClasses(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setLoading(false);
-    };
-    fetchClasses();
-  }, []);
+    }
+  };
 
-  const filteredClasses = classes.filter(cls => 
-    cls.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchClasses();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  if (loading) return <div className="loading">Loading apex classes...</div>;
+  if (loading && classes.length === 0) return <div className="loading">Loading apex classes...</div>;
 
   return (
     <div className="page-container metadata-view-container">
@@ -47,7 +51,7 @@ const ActiveClasses: React.FC = () => {
       <div className="search-container">
         <input 
           type="text" 
-          placeholder="Search classes..." 
+          placeholder="Search classes by name..." 
           className="metadata-search-input"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -66,8 +70,8 @@ const ActiveClasses: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredClasses.map((cls) => (
-              <tr key={cls.id}>
+            {classes.map((cls) => (
+              <tr key={cls.sfdcId}>
                 <td className="entity-name">{cls.name}</td>
                 <td>{cls.apiVersion}</td>
                 <td>{new Date(cls.lastModifiedDate).toLocaleDateString()}</td>
@@ -82,7 +86,7 @@ const ActiveClasses: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {filteredClasses.length === 0 && (
+            {classes.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>No classes found</td>
               </tr>
@@ -93,7 +97,7 @@ const ActiveClasses: React.FC = () => {
 
       {selectedClass && (
         <AddTraceModal 
-          entityId={selectedClass.id}
+          entityId={selectedClass.sfdcId}
           entityName={selectedClass.name}
           entityType="ApexClass"
           onClose={() => setSelectedClass(null)}

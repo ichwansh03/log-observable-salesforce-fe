@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { type ApexLogDto } from '../types';
 
 const LogList: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -47,6 +46,7 @@ const LogList: React.FC = () => {
       const body = await response.text();
       setSelectedLogBody(body);
     } catch (err) {
+      console.error('Failed to fetch log body:', err);
       alert('Failed to fetch log body');
     } finally {
       setFetchingBody(false);
@@ -58,15 +58,16 @@ const LogList: React.FC = () => {
       const response = await fetch(`/api/sfdc/logs/${id}/body`);
       const body = await response.text();
       const blob = new Blob([body], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
+      const url = globalThis.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${operation || 'log'}_${id}.log`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      globalThis.URL.revokeObjectURL(url);
+      a.remove();
     } catch (err) {
+      console.error('Failed to download log:', err);
       alert('Failed to download log');
     }
   };
@@ -136,7 +137,7 @@ const LogList: React.FC = () => {
       </div>
       
       {selectedLogBody !== null && (
-        <div className="modal-overlay" onClick={() => setSelectedLogBody(null)}>
+        <div className="modal-overlay" role="button" tabIndex={0} onClick={() => setSelectedLogBody(null)} onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') setSelectedLogBody(null); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Log Detail</h3>

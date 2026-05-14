@@ -3,7 +3,7 @@ import './MetadataViews.css';
 import AddTraceModal from './AddTraceModal';
 
 interface ApexTrigger {
-  id: string;
+  sfdcId: string;
   name: string;
   sobject: string;
   status: string;
@@ -16,28 +16,31 @@ const ActiveTriggers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTrigger, setSelectedTrigger] = useState<ApexTrigger | null>(null);
 
-  useEffect(() => {
-    const fetchTriggers = async () => {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      const mockTriggers: ApexTrigger[] = [
-        { id: '01qxxx1', name: 'AccountTrigger', sobject: 'Account', status: 'Active', lastModifiedDate: new Date().toISOString() },
-        { id: '01qxxx2', name: 'ContactTrigger', sobject: 'Contact', status: 'Active', lastModifiedDate: new Date().toISOString() },
-        { id: '01qxxx3', name: 'OpportunityTrigger', sobject: 'Opportunity', status: 'Active', lastModifiedDate: new Date().toISOString() },
-        { id: '01qxxx4', name: 'CaseTrigger', sobject: 'Case', status: 'Active', lastModifiedDate: new Date().toISOString() },
-      ];
-      setTriggers(mockTriggers);
+  const fetchTriggers = async () => {
+    setLoading(true);
+    try {
+      const url = searchTerm 
+        ? `/api/sfdc/metadata/triggers/db?name=${encodeURIComponent(searchTerm)}` 
+        : '/api/sfdc/metadata/triggers/db';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch triggers');
+      const data = await response.json();
+      setTriggers(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setLoading(false);
-    };
-    fetchTriggers();
-  }, []);
+    }
+  };
 
-  const filteredTriggers = triggers.filter(trigger => 
-    trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trigger.sobject.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTriggers();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  if (loading) return <div className="loading">Loading apex triggers...</div>;
+  if (loading && triggers.length === 0) return <div className="loading">Loading apex triggers...</div>;
 
   return (
     <div className="page-container metadata-view-container">
@@ -48,7 +51,7 @@ const ActiveTriggers: React.FC = () => {
       <div className="search-container">
         <input 
           type="text" 
-          placeholder="Search triggers..." 
+          placeholder="Search triggers by name..." 
           className="metadata-search-input"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -67,8 +70,8 @@ const ActiveTriggers: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredTriggers.map((trigger) => (
-              <tr key={trigger.id}>
+            {triggers.map((trigger) => (
+              <tr key={trigger.sfdcId}>
                 <td className="entity-name">{trigger.name}</td>
                 <td className="api-name">{trigger.sobject}</td>
                 <td>{new Date(trigger.lastModifiedDate).toLocaleDateString()}</td>
@@ -83,7 +86,7 @@ const ActiveTriggers: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {filteredTriggers.length === 0 && (
+            {triggers.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>No triggers found</td>
               </tr>
@@ -94,7 +97,7 @@ const ActiveTriggers: React.FC = () => {
 
       {selectedTrigger && (
         <AddTraceModal 
-          entityId={selectedTrigger.id}
+          entityId={selectedTrigger.sfdcId}
           entityName={selectedTrigger.name}
           entityType="ApexTrigger"
           onClose={() => setSelectedTrigger(null)}

@@ -33,9 +33,15 @@ const LogList: React.FC = () => {
   };
 
   useEffect(() => {
+    // Only fetch if both are empty OR at least one has 3+ chars
+    const shouldFetch = (searchClass.length === 0 && searchUser.length === 0) || 
+                       (searchClass.length >= 3 || searchUser.length >= 3);
+    
+    if (!shouldFetch) return;
+
     const timer = setTimeout(() => {
       void fetchLogs();
-    }, 300); // Debounce search
+    }, 500); // Increased debounce time for better UX
     return () => clearTimeout(timer);
   }, [page, size, searchClass, searchUser]);
 

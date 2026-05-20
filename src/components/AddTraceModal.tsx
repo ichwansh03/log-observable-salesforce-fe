@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AddTraceModal.css';
+import type { DebugLevel as DebugLevelType } from '../types';
 
 interface AddTraceModalProps {
   entityId: string;
@@ -10,12 +11,35 @@ interface AddTraceModalProps {
 
 const AddTraceModal: React.FC<AddTraceModalProps> = ({ entityId, entityName, entityType, onClose }) => {
   const [debugLevel, setDebugLevel] = useState('SFDC_DevConsole');
+  const [availableLevels, setAvailableLevels] = useState<DebugLevelType[]>([]);
+  const [loadingLevels, setLoadingLevels] = useState(true);
   const [durationMode, setDurationMode] = useState<'24h' | 'custom'>('24h');
   const [customDays, setCustomDays] = useState('0');
   const [customHours, setCustomHours] = useState('1');
   const [customMinutes, setCustomMinutes] = useState('0');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    const fetchDebugLevels = async () => {
+      try {
+        const response = await fetch('/api/sfdc/metadata/debug-levels/db');
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableLevels(data);
+          // If our default is not in the list, pick the first one
+          if (data.length > 0 && !data.find((l: any) => l.developerName === 'SFDC_DevConsole')) {
+            setDebugLevel(data[0].developerName);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch debug levels:', err);
+      } finally {
+        setLoadingLevels(false);
+      }
+    };
+    fetchDebugLevels();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +65,7 @@ const AddTraceModal: React.FC<AddTraceModalProps> = ({ entityId, entityName, ent
           tracedEntityId: entityId,
           debugLevelName: debugLevel,
           durationMinutes: totalMinutes,
+          entityType: entityType,
         }),
       });
 
@@ -71,15 +96,27 @@ const AddTraceModal: React.FC<AddTraceModalProps> = ({ entityId, entityName, ent
           <div className="form-row">
             <div className="form-group">
               <label>Debug Level</label>
-              <select 
-                value={debugLevel} 
-                onChange={(e) => setDebugLevel(e.target.value)}
-                className="form-select"
-              >
-                <option value="SFDC_DevConsole">SFDC_DevConsole</option>
-                <option value="SFDC_LogLevel">SFDC_LogLevel</option>
-                <option value="Custom">Custom</option>
-              </select>
+              {loadingLevels ? (
+                <div className="form-input">Loading...</div>
+              ) : (
+                <select 
+                  value={debugLevel} 
+                  onChange={(e) => setDebugLevel(e.target.value)}
+                  className="form-select"
+                >
+                  {availableLevels.map(level => (
+                    <option key={level.sfdcId} value={level.developerName}>
+                      {level.developerName}
+                    </option>
+                  ))}
+                  {availableLevels.length === 0 && (
+                    <>
+                      <option value="SFDC_DevConsole">SFDC_DevConsole</option>
+                      <option value="SFDC_LogLevel">SFDC_LogLevel</option>
+                    </>
+                  )}
+                </select>
+              )}
             </div>
 
             <div className="form-group">

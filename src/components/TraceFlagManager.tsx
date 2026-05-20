@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './TraceFlagManager.css';
-
-interface TraceFlag {
-  id: string;
-  tracedEntity: { name: string; attributes: { type: string } } | null;
-  startDate: string;
-  expirationDate: string;
-  debugLevel: { developerName: string } | null;
-}
+import type { TraceFlagDto } from '../types';
 
 const TraceFlagManager: React.FC = () => {
-  const [traces, setTraces] = useState<TraceFlag[]>([]);
+  const [traces, setTraces] = useState<TraceFlagDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +31,7 @@ const TraceFlagManager: React.FC = () => {
     try {
       const response = await fetch(`/api/sfdc/logs/trace-flags/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        setTraces(prev => prev.filter(t => t.id !== id));
+        setTraces(prev => prev.filter(t => t.Id !== id));
       } else {
         throw new Error('Failed to delete');
       }
@@ -71,16 +64,16 @@ const TraceFlagManager: React.FC = () => {
           </thead>
           <tbody>
             {traces.map((trace) => (
-              <tr key={trace.id}>
-                <td className="font-bold">{trace.tracedEntity?.name || 'Unknown'}</td>
-                <td><span className="type-badge">{trace.tracedEntity?.attributes?.type || 'Unknown'}</span></td>
-                <td>{trace.debugLevel?.developerName || 'Unknown'}</td>
-                <td>{new Date(trace.startDate).toLocaleTimeString()}</td>
-                <td>{new Date(trace.expirationDate).toLocaleTimeString()}</td>
+              <tr key={trace.Id}>
+                <td className="font-bold">{trace.TracedEntity?.Name || 'Unknown'}</td>
+                <td><span className="type-badge">{trace.TracedEntity?.attributes?.type || 'Unknown'}</span></td>
+                <td>{trace.DebugLevel?.DeveloperName || 'Unknown'}</td>
+                <td>{trace.StartDate ? new Date(trace.StartDate).toLocaleTimeString() : 'N/A'}</td>
+                <td>{trace.ExpirationDate ? new Date(trace.ExpirationDate).toLocaleTimeString() : 'N/A'}</td>
                 <td>
                   <button 
                     className="action-btn delete-btn" 
-                    onClick={() => handleDelete(trace.id)}
+                    onClick={() => handleDelete(trace.Id)}
                   >
                     Delete
                   </button>

@@ -6,6 +6,7 @@ import TraceFlagManager from './components/TraceFlagManager'
 import ActiveUsers from './components/ActiveUsers'
 import ActiveClasses from './components/ActiveClasses'
 import ActiveTriggers from './components/ActiveTriggers'
+import ActiveDebugLevels from './components/ActiveDebugLevels'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/active-users" element={<ActiveUsers />} />
           <Route path="/active-classes" element={<ActiveClasses />} />
           <Route path="/active-triggers" element={<ActiveTriggers />} />
+          <Route path="/debug-levels" element={<ActiveDebugLevels />} />
         </Routes>
       </main>
       <footer className="app-footer">

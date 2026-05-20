@@ -41,6 +41,12 @@ const Navbar: React.FC = () => {
         >
           Triggers
         </NavLink>
+        <NavLink 
+          to="/debug-levels" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+        >
+          Debug Levels
+        </NavLink>
       </div>
     </nav>
   );

@@ -2,6 +2,26 @@ export interface UserSummaryDto {
   Name?: string;
 }
 
+/**
+ * Represents the database 'Log' entity.
+ * Fields are lowercase to match the Kotlin domain object serialized by default.
+ */
+export interface Log {
+  sfdcId: string;
+  apexClassName?: string;
+  authorName?: string;
+  requestTime?: string;
+  operation?: string;
+  logSize?: number;
+  duration?: number;
+  status?: string;
+  request?: string;
+}
+
+/**
+ * Represents the Salesforce Tooling API 'ApexLog' DTO.
+ * Fields are Uppercase as defined by @JsonProperty in the backend.
+ */
 export interface ApexLogDto {
   Id: string;
   LogUser?: UserSummaryDto;
@@ -10,5 +30,66 @@ export interface ApexLogDto {
   Status?: string;
   Request?: string;
   LogLength?: number;
-  apexClassName?: string;
+  DurationMilliseconds?: number;
+  apexClassName?: string; 
+}
+
+export interface User {
+  sfdcId: string;
+  name: string;
+  username: string;
+  email: string;
+  profileName: string;
+  isActive?: boolean;
+}
+
+export interface ApexClass {
+  sfdcId: string;
+  name: string;
+  apiVersion: string;
+  status: string;
+  lastModifiedDate: string;
+}
+
+export interface ApexTrigger {
+  sfdcId: string;
+  name: string;
+  sobject: string;
+  status: string;
+  lastModifiedDate: string;
+}
+
+export interface DebugLevel {
+  sfdcId: string;
+  developerName: string;
+  masterLabel: string;
+  apexCode: string;
+  apexProfiling: string;
+  callout: string;
+  database: string;
+  system: string;
+  validation: string;
+  visualforce: string;
+  workflow: string;
+}
+
+/**
+ * Represents the Salesforce Tooling API 'TraceFlag' DTO.
+ * Fields are Uppercase as defined by @JsonProperty in the backend.
+ */
+export interface TraceFlagDto {
+  Id: string;
+  TracedEntityId: string;
+  TracedEntity?: {
+    Name?: string;
+    attributes?: {
+      type?: string;
+    };
+  };
+  StartDate?: string;
+  ExpirationDate?: string;
+  DebugLevelId?: string;
+  DebugLevel?: {
+    DeveloperName?: string;
+  };
 }

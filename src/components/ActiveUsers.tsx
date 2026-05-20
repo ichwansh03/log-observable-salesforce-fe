@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MetadataViews.css';
 import AddTraceModal from './AddTraceModal';
-
-interface User {
-  sfdcId: string;
-  name: string;
-  username: string;
-  email: string;
-  profileName: string;
-}
+import type { User } from '../types';
 
 const ActiveUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);

@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MetadataViews.css';
 import AddTraceModal from './AddTraceModal';
-
-interface ApexTrigger {
-  sfdcId: string;
-  name: string;
-  sobject: string;
-  status: string;
-  lastModifiedDate: string;
-}
+import type { ApexTrigger } from '../types';
 
 const ActiveTriggers: React.FC = () => {
   const [triggers, setTriggers] = useState<ApexTrigger[]>([]);

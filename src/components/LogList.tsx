@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import type { Log } from '../types';
 
 const LogList: React.FC = () => {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(0);
@@ -24,7 +25,7 @@ const LogList: React.FC = () => {
         throw new Error('Failed to fetch logs');
       }
       const data = await response.json();
-      setLogs(data as any[]);
+      setLogs(data as Log[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -143,10 +144,10 @@ const LogList: React.FC = () => {
       </div>
       
       {selectedLogBody !== null && (
-        <div className="modal-overlay" role="button" tabIndex={0} onClick={() => setSelectedLogBody(null)} onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') setSelectedLogBody(null); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setSelectedLogBody(null)} onKeyDown={(e) => { if (e.key === 'Escape') setSelectedLogBody(null); }} role="dialog" aria-modal="true" aria-labelledby="log-detail-title" tabIndex={-1}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} role="document">
             <div className="modal-header">
-              <h3>Log Detail</h3>
+              <h3 id="log-detail-title">Log Detail</h3>
               <button className="close-btn" onClick={() => setSelectedLogBody(null)}>×</button>
             </div>
             <pre className="log-body-pre">{selectedLogBody || 'No content'}</pre>

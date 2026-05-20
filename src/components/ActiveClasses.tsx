@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MetadataViews.css';
 import AddTraceModal from './AddTraceModal';
-
-interface ApexClass {
-  sfdcId: string;
-  name: string;
-  apiVersion: string;
-  status: string;
-  lastModifiedDate: string;
-}
+import type { ApexClass } from '../types';
 
 const ActiveClasses: React.FC = () => {
   const [classes, setClasses] = useState<ApexClass[]>([]);
